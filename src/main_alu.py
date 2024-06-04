@@ -66,22 +66,33 @@ def addTraspasoEdges(data, G):
 		
 		pass
 
-def getFisrtDeparture(estacion, data, G):
-	pass
+def getFirstDeparture(estacion, data, G): 
+	res = 10000000000000
+	for key, value in data["services"].items():  
+		stops = value["stops"]
+		for stop in stops:
+			if stop["time"] < res and stops[0]["station"] == estacion and stops[0]["type"] == "D": # Quiero encontrar el horario de la 1ra departure de la estación
+				res = stop["time"]
+	return res
 
 def getLastArrival(estacion, data, G):
-	pass
+    res = -1
+    for key, value in data["services"].items(): 
+        stops = value["stops"]
+        for stop in stops:
+            if stop["station"] == estacion and stop["type"] == "A" and stop["time"] > res: # Quiero encontrar el horario del último arrival a la estación
+                res = stop["time"]
+    return res 
 
 def addTrasNocheEdges(data, G): 
 
 	for estacion in data["stations"]:
 		print(estacion)
 
-		inicio = getFisrtDeparture(estacion, data, G)
+		inicio = getFirstDeparture(estacion, data, G)
 		final = getLastArrival(estacion, data, G)
 
-		G.add_edge(inicio, final, weight=0, cost=1)
-
+		G.add_edge(final, inicio, weight=0, cost=1)
 
 	pass
 
@@ -99,7 +110,7 @@ def generateGraph(filename:str):
 
 	addNodesAndTrainEdges(data, G)
 	addTraspasoEdges(data, G)
-	# addTrasNocheEdges(data, G)
+	addTrasNocheEdges(data, G)
 
 	# pos = nx.bipartite_layout(G, [node for node in G.nodes if G.nodes[node]['bipartite']==0])
 
