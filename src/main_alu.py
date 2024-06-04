@@ -46,9 +46,43 @@ def addNodesAndTrainEdges(data, G):
 # 	pass
 
 def addTraspasoEdges(data, G):
+	keys_list = list(data["services"].keys())
+
+	prev_service = data["services"][keys_list[0]]
+	for i,key in enumerate(keys_list[1:]):
+		curreny_service = data["services"][key]
+		if prev_service["stops"][0]["station"] == curreny_service["stops"][0]["station"]:
+			# Lado A
+			from_time = prev_service["stops"][0]["time"]
+			to_time = curreny_service["stops"][0]["time"]
+			G.add_edge(from_time, to_time, weight=0, cost=0)
+
+			# Lado B
+			from_time = prev_service["stops"][1]["time"]
+			to_time = curreny_service["stops"][1]["time"]
+			G.add_edge(from_time, to_time, weight=0, cost=0)
+
+		prev_service = curreny_service
+		
+		pass
+
+def getFisrtDeparture(estacion, data, G):
+	pass
+
+def getLastArrival(estacion, data, G):
 	pass
 
 def addTrasNocheEdges(data, G): 
+
+	for estacion in data["stations"]:
+		print(estacion)
+
+		inicio = getFisrtDeparture(estacion, data, G)
+		final = getLastArrival(estacion, data, G)
+
+		G.add_edge(inicio, final, weight=0, cost=1)
+
+
 	pass
 
 def generateGraph(filename:str):
@@ -64,9 +98,10 @@ def generateGraph(filename:str):
 	G = nx.DiGraph()
 
 	addNodesAndTrainEdges(data, G)
-	# addTrainEdges(data, G)
 	addTraspasoEdges(data, G)
-	addTrasNocheEdges(data, G)
+	# addTrasNocheEdges(data, G)
+
+	# pos = nx.bipartite_layout(G, [node for node in G.nodes if G.nodes[node]['bipartite']==0])
 
 	printGraph(G)
 
