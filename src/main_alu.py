@@ -1,6 +1,7 @@
 import json
 import networkx as nx
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def printGraph(G):
@@ -65,7 +66,23 @@ def addTraspasoEdges(data, G):
 		prev_service = curreny_service
 		
 		pass
+def addTraspasoEdges2(data, G):
 
+	for station in data["stations"]:
+		station_nodes = []
+
+		for key, value in data["services"].items():
+			stops = value["stops"]
+			for stop in stops:
+				if stop["station"] == station:
+					station_nodes.append(stop["time"])
+		#station_nodes = station_nodes.sort() # TAL VEZ HAYA QUE ORDENAR ESTA LISTA
+		station_nodes.sort()
+		print(station_nodes)
+
+		for i in range(len(station_nodes)-1):
+			G.add_edge(station_nodes[i], station_nodes[i+1], weight=0, cost=0)
+	pass
 def getFirstDeparture(estacion, data, G): 
 	res = 10000000000000
 	for key, value in data["services"].items():  
@@ -92,7 +109,7 @@ def addTrasNocheEdges(data, G):
 		inicio = getFirstDeparture(estacion, data, G)
 		final = getLastArrival(estacion, data, G)
 
-		G.add_edge(final, inicio, weight=0, cost=1)
+		G.add_edge(final, inicio, weight=1)
 
 	pass
 
@@ -109,7 +126,7 @@ def generateGraph(filename:str):
 	G = nx.DiGraph()
 
 	addNodesAndTrainEdges(data, G)
-	addTraspasoEdges(data, G)
+	addTraspasoEdges2(data, G)
 	addTrasNocheEdges(data, G)
 
 	# pos = nx.bipartite_layout(G, [node for node in G.nodes if G.nodes[node]['bipartite']==0])
