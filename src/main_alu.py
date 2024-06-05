@@ -5,8 +5,10 @@ import numpy as np
 
 
 def printGraph(G):
+	node_colors = [G.nodes[node]['color'] for node in G.nodes()] # asigno el color a cada nodo según su tipo (D o A)
+	edge_colors = [G[u][v]['color'] for u,v in G.edges()] # asigno el color a cada arco según su tipo
 	plt.figure(figsize=(8, 6))  # Optional: specify figure size
-	nx.draw(G, with_labels=True, font_weight='bold')
+	nx.draw(G,with_labels=True, node_color = node_colors, edge_color = edge_colors, font_weight='bold')
 	plt.show()
 
 def addService(service, G):
@@ -26,6 +28,7 @@ def addService(service, G):
 
 def addNodesAndTrainEdges(data, G): 
 	services = data["services"]
+	estacion = None
 	for service in services.items():
 		id , data = service
 		from_station = data["stops"][0]["station"]
@@ -33,11 +36,11 @@ def addNodesAndTrainEdges(data, G):
 		from_time = data["stops"][0]["time"]
 		to_time = data["stops"][1]["time"]
 		demand = data["demand"]
-
+		estacion = from_station
 		
-		G.add_node(from_time,weight=0)
-		G.add_node(to_time,weight=0)
-		G.add_edge(from_time, to_time, weight=0, cost=0)
+		G.add_node(from_time,weight=0,color='blue',station=estacion)
+		G.add_node(to_time,weight=0,color='red',station=estacion)
+		G.add_edge(from_time, to_time, weight=0, cost=0,color='green')
 		
 
 
@@ -56,12 +59,12 @@ def addTraspasoEdges(data, G):
 			# Lado A
 			from_time = prev_service["stops"][0]["time"]
 			to_time = curreny_service["stops"][0]["time"]
-			G.add_edge(from_time, to_time, weight=0, cost=0)
+			G.add_edge(from_time, to_time, weight=0, cost=0, color='blue')
 
 			# Lado B
 			from_time = prev_service["stops"][1]["time"]
 			to_time = curreny_service["stops"][1]["time"]
-			G.add_edge(from_time, to_time, weight=0, cost=0)
+			G.add_edge(from_time, to_time, weight=0, cost=0,color='blue')
 
 		prev_service = curreny_service
 		
@@ -81,8 +84,9 @@ def addTraspasoEdges2(data, G):
 		print(station_nodes)
 
 		for i in range(len(station_nodes)-1):
-			G.add_edge(station_nodes[i], station_nodes[i+1], weight=0, cost=0)
+			G.add_edge(station_nodes[i], station_nodes[i+1], weight=0, cost=0,color='blue')
 	pass
+
 def getFirstDeparture(estacion, data, G): 
 	res = 10000000000000
 	for key, value in data["services"].items():  
@@ -109,7 +113,7 @@ def addTrasNocheEdges(data, G):
 		inicio = getFirstDeparture(estacion, data, G)
 		final = getLastArrival(estacion, data, G)
 
-		G.add_edge(final, inicio, weight=1)
+		G.add_edge(final, inicio, weight=1,color='red')
 
 	pass
 
