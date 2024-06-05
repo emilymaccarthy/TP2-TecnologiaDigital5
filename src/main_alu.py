@@ -36,10 +36,10 @@ def addNodesAndTrainEdges(data, G):
 		from_time = data["stops"][0]["time"]
 		to_time = data["stops"][1]["time"]
 		demand = data["demand"]
-		estacion = from_station
+		# estacion = from_station
 		
-		G.add_node(from_time,weight=0,color='blue',station=estacion)
-		G.add_node(to_time,weight=0,color='red',station=estacion)
+		G.add_node(from_time,weight=0,color='blue')
+		G.add_node(to_time,weight=0,color='red')
 		G.add_edge(from_time, to_time, weight=0, cost=0,color='green')
 		
 
