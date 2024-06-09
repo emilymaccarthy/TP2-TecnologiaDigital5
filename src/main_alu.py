@@ -30,17 +30,18 @@ def addNodesAndTrainEdges(data, G):
 	services = data["services"]
 	estacion = None
 	for service in services.items():
-		id , data = service
-		from_station = data["stops"][0]["station"]
-		to_station = data["stops"][1]["station"]
-		from_time = data["stops"][0]["time"]
-		to_time = data["stops"][1]["time"]
-		demand = data["demand"]
+		id , data_ = service
+		from_station = data_["stops"][0]["station"]
+		to_station = data_["stops"][1]["station"]
+		from_time = data_["stops"][0]["time"]
+		to_time = data_["stops"][1]["time"]
+		demand = data_["demand"][0]
 		# estacion = from_station
-		
+		print(type(data['services']))
 		G.add_node(from_time,weight=0,color='blue')
+		# G.add_node(to_time,weight=0,demand=int(demand/data["rs_info"]["capacity"]),color='red')
 		G.add_node(to_time,weight=0,color='red')
-		G.add_edge(from_time, to_time, weight=0, cost=0,color='green')
+		G.add_edge(from_time, to_time, weight= -int(demand/data["rs_info"]["capacity"]),capacity = data["rs_info"]["max_rs"], color='green' )
 		
 
 
@@ -84,7 +85,7 @@ def addTraspasoEdges2(data, G):
 		print(station_nodes)
 
 		for i in range(len(station_nodes)-1):
-			G.add_edge(station_nodes[i], station_nodes[i+1], weight=0, cost=0,color='blue')
+			G.add_edge(station_nodes[i], station_nodes[i+1], weight=0, capacity=data["rs_info"]["max_rs"] ,color='blue')
 	pass
 
 def getFirstDeparture(estacion, data, G): 
@@ -111,14 +112,17 @@ def addTrasNocheEdges(data, G):
 		print(estacion)
 
 		inicio = getFirstDeparture(estacion, data, G)
+		# G.node[inicio].update(demand = -1 * data["rs_info"]["capacity"])
 		final = getLastArrival(estacion, data, G)
+		# G.node[inicio].update(demand = data["rs_info"]["capacity"])
 
-		G.add_edge(final, inicio, weight=1,color='red')
+		G.add_edge(final, inicio, weight=1,capacity = data["rs_info"]["max_rs"],color='red')
 
 	pass
 
 def generateGraph(filename:str):
 
+	data = None
 	with open(filename) as json_file:
 		data = json.load(json_file)
 		json_file.close()
@@ -134,8 +138,8 @@ def generateGraph(filename:str):
 	addTrasNocheEdges(data, G)
 
 	# pos = nx.bipartite_layout(G, [node for node in G.nodes if G.nodes[node]['bipartite']==0])
-
-	printGraph(G)
+	return G
+	
 
 	
 def main():
@@ -145,7 +149,10 @@ def main():
 	else:
 		filename = "instances/retiro-tigre-semana.json"
 
-	generateGraph(filename)
+	G = generateGraph(filename)
+	flowDict = nx.min_cost_flow(G)
+	print(flowDict)
+	printGraph(G)
 
 	
 
