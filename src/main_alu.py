@@ -36,12 +36,13 @@ def addNodesAndTrainEdges(data, G):
 		from_time = data_["stops"][0]["time"]
 		to_time = data_["stops"][1]["time"]
 		demand = data_["demand"][0]
+		flow = np.ceil(demand/data["rs_info"]["capacity"])
 		# estacion = from_station
 		print(type(data['services']))
-		G.add_node(from_time,weight=0,color='blue')
+		G.add_node(from_time,weight=0,demand= flow,color='blue')
 		# G.add_node(to_time,weight=0,demand=int(demand/data["rs_info"]["capacity"]),color='red')
-		G.add_node(to_time,weight=0,color='red')
-		G.add_edge(from_time, to_time, weight= -int(demand/data["rs_info"]["capacity"]),capacity = data["rs_info"]["max_rs"], color='green' )
+		G.add_node(to_time,weight=0,demand=-flow,color='red')
+		G.add_edge(from_time, to_time, weight= 0,capacity = data["rs_info"]["max_rs"], color='green' )
 		
 
 
@@ -60,12 +61,12 @@ def addTraspasoEdges(data, G):
 			# Lado A
 			from_time = prev_service["stops"][0]["time"]
 			to_time = curreny_service["stops"][0]["time"]
-			G.add_edge(from_time, to_time, weight=0, cost=0, color='blue')
+			G.add_edge(from_time, to_time, weight=0, color='blue')
 
 			# Lado B
 			from_time = prev_service["stops"][1]["time"]
 			to_time = curreny_service["stops"][1]["time"]
-			G.add_edge(from_time, to_time, weight=0, cost=0,color='blue')
+			G.add_edge(from_time, to_time, weight=0,capacity=data["rs_info"]["max_rs"], color='blue')
 
 		prev_service = curreny_service
 		
