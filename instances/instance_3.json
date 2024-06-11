@@ -1,0 +1,20 @@
+{
+    "services":{
+            "1": {"stops": [{"time": 608, "station": "Retiro", "type": "D"}, {"time": 704, "station": "Tigre", "type": "A"}], "demand": [500]},
+            "2": {"stops": [{"time": 624, "station": "Retiro", "type": "D"}, {"time": 720, "station": "Tigre", "type": "A"}], "demand": [500]}, 
+            "3": {"stops": [{"time": 640, "station": "Retiro", "type": "D"}, {"time": 736, "station": "Tigre", "type": "A"}], "demand": [500]},
+            "4": {"stops": [{"time": 656, "station": "Retiro", "type": "D"}, {"time": 752, "station": "Tigre", "type": "A"}], "demand": [500]}, 
+            "5": {"stops": [{"time": 712, "station": "Retiro", "type": "D"}, {"time": 808, "station": "Tigre", "type": "A"}], "demand": [500]},
+            "6": {"stops": [{"time": 728, "station": "Retiro", "type": "D"}, {"time": 824, "station": "Tigre", "type": "A"}], "demand": [500]}, 
+            
+            "7": {"stops": [{"time": 620, "station": "Tigre", "type": "D"}, {"time": 724, "station": "Retiro", "type": "A"}], "demand": [500]}, 
+            "8": {"stops": [{"time": 630, "station": "Tigre", "type": "D"}, {"time": 734, "station": "Retiro", "type": "A"}], "demand": [500]},
+            "9": {"stops": [{"time": 650, "station": "Tigre", "type": "D"}, {"time": 754, "station": "Retiro", "type": "A"}], "demand": [500]}, 
+            "10": {"stops": [{"time": 670, "station": "Tigre", "type": "D"}, {"time": 774, "station": "Retiro", "type": "A"}], "demand": [500]},
+            "11": {"stops": [{"time": 722, "station": "Tigre", "type": "D"}, {"time": 824, "station": "Retiro", "type": "A"}], "demand": [500]}, 
+            "12": {"stops": [{"time": 730, "station": "Tigre", "type": "D"}, {"time": 834, "station": "Retiro", "type": "A"}], "demand": [500]}
+        },
+    "stations": ["Tigre", "Retiro"],
+    "cost_per_unit": {"Tigre": 1.0, "Retiro": 1.0},
+    "rs_info": {"capacity": 100, "max_rs": 25}
+}
