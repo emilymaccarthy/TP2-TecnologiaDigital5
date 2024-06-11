@@ -35,14 +35,14 @@ def addNodesAndTrainEdges(data, G):
 		to_station = data_["stops"][1]["station"]
 		from_time = data_["stops"][0]["time"]
 		to_time = data_["stops"][1]["time"]
+		capacidad = data["rs_info"]["capacity"]
 		demand = data_["demand"][0]
-		flow = np.ceil(demand/data["rs_info"]["capacity"])
-		# estacion = from_station
+		flow = int(np.ceil(demand/capacidad))
+
 		print(type(data['services']))
-		G.add_node(from_time,weight=0,demand= flow,color='blue')
-		# G.add_node(to_time,weight=0,demand=int(demand/data["rs_info"]["capacity"]),color='red')
-		G.add_node(to_time,weight=0,demand=-flow,color='red')
-		G.add_edge(from_time, to_time, weight= 0,capacity = data["rs_info"]["max_rs"], color='green' )
+		G.add_node(from_time,weight=0, demand = flow, color='blue')
+		G.add_node(to_time,weight=0, demand= -flow, color='red')
+		G.add_edge(from_time, to_time, weight= 0,capacity = data["rs_info"]["max_rs"] - flow, color='green' )
 		
 
 
@@ -51,27 +51,8 @@ def addNodesAndTrainEdges(data, G):
 # def addTrainEdges(data, G):
 # 	pass
 
+
 def addTraspasoEdges(data, G):
-	keys_list = list(data["services"].keys())
-
-	prev_service = data["services"][keys_list[0]]
-	for i,key in enumerate(keys_list[1:]):
-		curreny_service = data["services"][key]
-		if prev_service["stops"][0]["station"] == curreny_service["stops"][0]["station"]:
-			# Lado A
-			from_time = prev_service["stops"][0]["time"]
-			to_time = curreny_service["stops"][0]["time"]
-			G.add_edge(from_time, to_time, weight=0, color='blue')
-
-			# Lado B
-			from_time = prev_service["stops"][1]["time"]
-			to_time = curreny_service["stops"][1]["time"]
-			G.add_edge(from_time, to_time, weight=0,capacity=data["rs_info"]["max_rs"], color='blue')
-
-		prev_service = curreny_service
-		
-		pass
-def addTraspasoEdges2(data, G):
 
 	for station in data["stations"]:
 		station_nodes = []
@@ -110,12 +91,8 @@ def getLastArrival(estacion, data, G):
 def addTrasNocheEdges(data, G): 
 
 	for estacion in data["stations"]:
-		print(estacion)
-
 		inicio = getFirstDeparture(estacion, data, G)
-		# G.node[inicio].update(demand = -1 * data["rs_info"]["capacity"])
 		final = getLastArrival(estacion, data, G)
-		# G.node[inicio].update(demand = data["rs_info"]["capacity"])
 
 		G.add_edge(final, inicio, weight=1,capacity = data["rs_info"]["max_rs"],color='red')
 
@@ -128,14 +105,10 @@ def generateGraph(filename:str):
 		data = json.load(json_file)
 		json_file.close()
 
-	COST_PER_UNIT = data["cost_per_unit"]
-	RS_INFO = data["rs_info"]
-	VAGON_CAPACITY = 100
-	
 	G = nx.DiGraph()
 
 	addNodesAndTrainEdges(data, G)
-	addTraspasoEdges2(data, G)
+	addTraspasoEdges(data, G)
 	addTrasNocheEdges(data, G)
 
 	# pos = nx.bipartite_layout(G, [node for node in G.nodes if G.nodes[node]['bipartite']==0])
@@ -153,7 +126,7 @@ def main():
 	G = generateGraph(filename)
 	flowDict = nx.min_cost_flow(G)
 	print(flowDict)
-	printGraph(G)
+	# printGraph(G)
 
 	
 
