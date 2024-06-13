@@ -4,12 +4,28 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def printGraph(G):
-	node_colors = [G.nodes[node]['color'] for node in G.nodes()] # asigno el color a cada nodo según su tipo (D o A)
-	edge_colors = [G[u][v]['color'] for u,v in G.edges()] # asigno el color a cada arco según su tipo
-	plt.figure(figsize=(8, 6))  # Optional: specify figure size
-	nx.draw(G,with_labels=True, node_color = node_colors, edge_color = edge_colors, font_weight='bold')
+def printGraph(G,flow_dict):
+	# Crear etiquetas para los bordes que muestren peso, capacidad y flujo
+	edge_labels = {(u, v): f"w={d['weight']}, c={d['capacity']}, f={flow_dict[u][v]}" 
+				for u, v, d in G.edges(data=True)}
+
+	# Asignar colores a los nodos y bordes
+	node_colors = [G.nodes[node]['color'] for node in G.nodes()]
+	edge_colors = [G[u][v]['color'] for u, v in G.edges()]
+
+	# Dibujar el grafo
+	plt.figure(figsize=(8, 6))
+	pos = nx.spring_layout(G)
+
+	nx.draw(G, pos, with_labels=True, node_color=node_colors, edge_color=edge_colors, font_weight='bold')
+	nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+
 	plt.show()
+	# node_colors = [G.nodes[node]['color'] for node in G.nodes()] # asigno el color a cada nodo según su tipo (D o A)
+	# edge_colors = [G[u][v]['color'] for u,v in G.edges()] # asigno el color a cada arco según su tipo
+	# plt.figure(figsize=(8, 6))  # Optional: specify figure size
+	# nx.draw(G,with_labels=True, node_color = node_colors, edge_color = edge_colors, font_weight='bold')
+	# plt.show()
 
 def addService(service, G):
     ## haces los nodos
@@ -170,7 +186,7 @@ def vagones_inciales(G, flowDict, estaciones):
             
 	
 def main():
-	instance = 1
+	instance = 0
 	if(instance == 0):
 		filename = "instances/toy_instance.json"
 	elif(instance == 1):
@@ -179,14 +195,16 @@ def main():
 		filename = "instances/retiro-tigre-semana.json"
 
 	G = generateGraph(filename)
-	printGraph(G)
+	
 
 	flowDict = nx.min_cost_flow(G)
-	costo_minimo(flowDict,G)
+	printGraph(G,flowDict)
+	
+	# costo_minimo(flowDict,G)
  
-	estaciones = ['Retiro','Tigre']
+	# estaciones = ['Retiro','Tigre']
 
-	vagones_totales(flowDict, filename, G)
+	# vagones_totales(flowDict, filename, G)
 	
 
 	
