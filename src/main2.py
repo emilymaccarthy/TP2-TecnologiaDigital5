@@ -3,48 +3,89 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 
+def get_node_name(time:int,station:str):
+    name = str(time)
+    while len(name) < 4:
+        name = '0' + name
+    return name +"_" +station[:2]
+
+def sort_nodes(nodes:list):
+    sorted_nodes = []
+    for i in range(len(nodes)):
+        value = int(nodes[i][:4])
+        sorted_nodes.append(value)
+    sorted_nodes.sort()
+    for i in range(len(sorted_nodes)):
+        sorted_nodes[i] = get_node_name(sorted_nodes[i],nodes[i][5:])
+    return sorted_nodes
+
+def getPos(filename:str):
+
+	data = None
+	
+	with open(filename) as json_file:
+		data = json.load(json_file)
+		json_file.close()
+	
+	servicios:dict = data["services"]
+	pos = {}
+	for i, estacion in enumerate(data["stations"]):
+		columna = []
+		for key, value in servicios.items():
+			
+			if value["stops"][0]["station"] == estacion:
+					name_value = get_node_name(value["stops"][0]["time"],value["stops"][0]["station"])
+					columna.append(name_value)
+			if value["stops"][1]["station"] == estacion:
+					name_value = get_node_name(value["stops"][1]["time"],value["stops"][1]["station"])
+					columna.append(name_value)
+		columna = sort_nodes(columna)
+		for j, value in enumerate(columna):
+			
+			pos[value] = (i,j)
+
+		print("POS",pos)
+	return pos
 
 def printGraph(G,filename,flow_dict):
 	# Crear etiquetas para los bordes que muestren peso, capacidad y flujo
-	edge_labels = {(u, v): f"w={d['weight']}, c={d['capacity']}, f={flow_dict[u][v]}" 
+	edge_labels = {(u, v): f"w={d['weight']}, c={d['capacity']}, f={flow_dict[u][v]}"
 				for u, v, d in G.edges(data=True)}
-
 	# Asignar colores a los nodos y bordes
 	node_colors = [G.nodes[node]['color'] for node in G.nodes()]
 	edge_colors = [G[u][v]['color'] for u, v in G.edges()]
+	
+	edges_with_curves = [("0314_Re", "0289_Re"), ("0358_Ti", "0245_Ti")]  # Especificar aristas con curva aquí
+	edge_styles = ['arc3, rad=0.45' if (u, v) in edges_with_curves else 'arc3, rad=0' for u, v in G.edges()]
 
-	pos = nx.spring_layout(G)  # posiciones de los nodos
 
-	# Dibujar el grafo
+	pos = getPos(filename)
+	print(pos)
+	print(G.nodes())
+
+
+	
 	plt.figure(figsize=(8, 6))
 	nx.draw_networkx_nodes(G, pos, node_color=node_colors)
-	
-
-	nx.draw(G, pos, with_labels=True, node_color=node_colors, edge_color=edge_colors, font_weight='bold')
+	nx.draw_networkx_labels(G, pos, font_weight='bold')
 	nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
-
+	for (u, v), style in zip(G.edges(), edge_styles):
+	    nx.draw_networkx_edges(G, pos, edgelist=[(u, v)], edge_color=[G[u][v]['color']], connectionstyle=style)
+	    
 	plt.show()
-	# node_colors = [G.nodes[node]['color'] for node in G.nodes()] # asigno el color a cada nodo según su tipo (D o A)
-	# edge_colors = [G[u][v]['color'] for u,v in G.edges()] # asigno el color a cada arco según su tipo
-	# plt.figure(figsize=(8, 6))  # Optional: specify figure size
-	# nx.draw(G,with_labels=True, node_color = node_colors, edge_color = edge_colors, font_weight='bold')
-	# plt.show()
+
+
 
 def addService(service, G):
     ## haces los nodos
 	id, data = service
-	# print(data)
 	from_station = data["stops"][0]["station"]
 	to_station = data["stops"][1]["station"]
 	from_time = data["stops"][0]["time"]
 	to_time = data["stops"][1]["time"]
 	demand = data["demand"]
 
-	print(from_station, to_station, from_time, to_time,demand)
-	
 
-
-	# print(service, data["services"][service]["stops"])
 
 def addNodesAndTrainEdges(data, G): 
     ## agrega los trenes de viaje 
@@ -60,15 +101,15 @@ def addNodesAndTrainEdges(data, G):
 		demand = data_["demand"][0]
 		flow = int(np.ceil(demand/capacidad))
 
-		print(type(data['services']))
-		G.add_node(from_time,demand = flow, color='blue')
-		G.add_node(to_time, demand= -flow, color='red')
-		G.add_edge(from_time, to_time, weight= 0,capacity = data["rs_info"]["max_rs"] - flow, color='green' )
+		from_ = get_node_name(from_time,from_station)
+		to_ = get_node_name(to_time,to_station)
+		G.add_node(from_,demand = flow, color='blue')
+		G.add_node(to_, demand= -flow, color='red')
+		G.add_edge(from_, to_, weight= 0,capacity = data["rs_info"]["max_rs"] - flow, color='green' )
 		
 
 
-# def addTrainEdges(data, G):
-# 	pass
+
 
 
 def addTraspasoEdges(data, G):
@@ -83,11 +124,11 @@ def addTraspasoEdges(data, G):
 					station_nodes.append(stop["time"])
 		#station_nodes = station_nodes.sort() # TAL VEZ HAYA QUE ORDENAR ESTA LISTA
 		station_nodes.sort()
-		print(station_nodes)
-
+		
+		station_nodes = [get_node_name(station_nodes[i],station) for i in range(len(station_nodes))]
 		for i in range(len(station_nodes)-1):
 			G.add_edge(station_nodes[i], station_nodes[i+1], weight=0, capacity=data["rs_info"]["max_rs"] ,color='blue')
-	pass
+            
 
 def getFirstDeparture(estacion, data, G): 
     ## primer servicio del diaa
@@ -97,7 +138,7 @@ def getFirstDeparture(estacion, data, G):
 		for stop in stops:
 			if stop["time"] < res and stops[0]["station"] == estacion and stops[0]["type"] == "D": # Quiero encontrar el horario de la 1ra departure de la estación
 				res = stop["time"]
-	return res
+	return get_node_name(res, estacion)
 
 def getLastArrival(estacion, data, G):
     ## ultimo servico del dia
@@ -107,7 +148,7 @@ def getLastArrival(estacion, data, G):
         for stop in stops:
             if stop["station"] == estacion and stop["type"] == "A" and stop["time"] > res: # Quiero encontrar el horario del último arrival a la estación
                 res = stop["time"]
-    return res 
+    return get_node_name(res, estacion)
 
 def addTrasNocheEdges(data, G): 
 	## agregas las aristas de trasnoche 
