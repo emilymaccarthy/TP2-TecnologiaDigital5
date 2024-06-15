@@ -40,39 +40,51 @@ def getPos(filename:str):
 					name_value = get_node_name(value["stops"][1]["time"],value["stops"][1]["station"])
 					columna.append(name_value)
 		columna = sort_nodes(columna)
+		columna.reverse()
 		for j, value in enumerate(columna):
 			
 			pos[value] = (i,j)
 
-		print("POS",pos)
 	return pos
+def get_curved_edges(G):
+	edges = []
+	for u,v in G.edges():
+		if u[:4] > v[:4]:
+			edges.append((u,v))
+	return edges
 
 def printGraph(G,filename,flow_dict):
-	# Crear etiquetas para los bordes que muestren peso, capacidad y flujo
-	edge_labels = {(u, v): f"w={d['weight']}, c={d['capacity']}, f={flow_dict[u][v]}"
-				for u, v, d in G.edges(data=True)}
-	# Asignar colores a los nodos y bordes
-	node_colors = [G.nodes[node]['color'] for node in G.nodes()]
-	edge_colors = [G[u][v]['color'] for u, v in G.edges()]
 	
-	edges_with_curves = [("0314_Re", "0289_Re"), ("0358_Ti", "0245_Ti")]  # Especificar aristas con curva aquí
-	edge_styles = ['arc3, rad=0.45' if (u, v) in edges_with_curves else 'arc3, rad=0' for u, v in G.edges()]
+    # Crear etiquetas para los bordes que muestren peso, capacidad y flujo
+    edge_labels = {}
+    for u, v, d in G.edges(data=True):
+        if u in flow_dict and v in flow_dict[u]:
+            edge_labels[(u, v)] = f"w={d['weight']}, c={d['capacity']}, f={flow_dict[u][v]}"
+        else:
+            print(f"Missing flow for edge ({u}, {v})")
+    
+    # Asignar colores a los nodos y bordes
+    node_colors = [G.nodes[node]['color'] for node in G.nodes()]
+    edge_colors = [G[u][v]['color'] for u, v in G.edges()]
+    edges_curves = [G.edges()]
+    
+    edges_with_curves = get_curved_edges(G)  # Especificar aristas con curva aquí
+    
+    edge_styles = ['arc3, rad=0.45' if (u, v) in edges_with_curves else 'arc3, rad=0' for u, v in G.edges()]
+
+    pos = getPos(filename)
 
 
-	pos = getPos(filename)
-	print(pos)
-	print(G.nodes())
+    plt.figure(figsize=(8, 8))
+    nx.draw_networkx_nodes(G, pos, node_color=node_colors)
+    nx.draw_networkx_labels(G, pos, font_weight='bold')
 
-
-	
-	plt.figure(figsize=(8, 6))
-	nx.draw_networkx_nodes(G, pos, node_color=node_colors)
-	nx.draw_networkx_labels(G, pos, font_weight='bold')
-	nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
-	for (u, v), style in zip(G.edges(), edge_styles):
-	    nx.draw_networkx_edges(G, pos, edgelist=[(u, v)], edge_color=[G[u][v]['color']], connectionstyle=style)
-	    
-	plt.show()
+    for (u, v), style in zip(G.edges(), edge_styles):
+        nx.draw_networkx_edges(G, pos, edgelist=[(u, v)], edge_color=[G[u][v]['color']], connectionstyle=style)
+    
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+    
+    plt.show()
 
 
 
@@ -107,10 +119,6 @@ def addNodesAndTrainEdges(data, G):
 		G.add_node(to_, demand= -flow, color='red')
 		G.add_edge(from_, to_, weight= 0,capacity = data["rs_info"]["max_rs"] - flow, color='green' )
 		
-
-
-
-
 
 def addTraspasoEdges(data, G):
 	## conecta dos eventos consecutivos 
@@ -186,7 +194,7 @@ def costo_minimo(flowDict,G):
             flowDict[u][v] += G.nodes[u]["demand"] 
             print(f"flowdict[u,v] after: {flowDict[u][v]}")
             
-    print(flowDict)
+
     
 def vagones_totales(flowDict,filename, G):
 	data = None
@@ -244,11 +252,11 @@ def main():
 	flowDict = nx.min_cost_flow(G)
 	printGraph(G,filename,flowDict)
 
-	# costo_minimo(flowDict,G)
+	costo_minimo(flowDict,G)
  
-	# estaciones = ['Retiro','Tigre']
+	estaciones = ['Retiro','Tigre']
 
-	# vagones_totales(flowDict, filename, G)
+	vagones_totales(flowDict, filename, G)
 	
 
 	
