@@ -158,17 +158,18 @@ def getLastArrival(estacion, data, G):
                 res = stop["time"]
     return get_node_name(res, estacion)
 
-def addTrasNocheEdges(data, G): 
+def addTrasNocheEdges(data, G, modificacion_trasnoche): 
 	## agregas las aristas de trasnoche 
 	for estacion in data["stations"]:
 		inicio = getFirstDeparture(estacion, data, G)
 		final = getLastArrival(estacion, data, G)
-
-		G.add_edge(final, inicio, weight=1,capacity = data["rs_info"]["max_rs"],color='red')
-
+		if(modificacion_trasnoche[1] == estacion):
+			G.add_edge(final, inicio, weight=1,capacity = data["rs_info"]["max_rs"] - modificacion_trasnoche[0],color='red')
+		else:
+			G.add_edge(final, inicio, weight=1,capacity = data["rs_info"]["max_rs"],color='red')
 	pass
 
-def generateGraph(filename:str):
+def generateGraph(filename:str,modificaciones_trasnoche):
 
 	data = None
 	with open(filename) as json_file:
@@ -179,7 +180,7 @@ def generateGraph(filename:str):
 
 	addNodesAndTrainEdges(data, G)
 	addTraspasoEdges(data, G)
-	addTrasNocheEdges(data, G)
+	addTrasNocheEdges(data, G,modificaciones_trasnoche)
 
 	# pos = nx.bipartite_layout(G, [node for node in G.nodes if G.nodes[node]['bipartite']==0])
 	return G
@@ -246,20 +247,23 @@ def main():
 	else:
 		filename = "instances/retiro-tigre-semana.json"
 
-	G = generateGraph(filename)
-	
+	REDUCCION_CAPACIDAD_TRASNOCHE = (0,"Tigre")
+
+	G = generateGraph(filename,REDUCCION_CAPACIDAD_TRASNOCHE)
 
 	flowDict = nx.min_cost_flow(G)
-	printGraph(G,filename,flowDict)
 
-	costo_minimo(flowDict,G)
- 
-	estaciones = ['Retiro','Tigre']
+	print("FLOW ANTES:", flowDict)
 
 	vagones_totales(flowDict, filename, G)
 	
+	costo_minimo(flowDict,G)
 
-	
+	print("FLOW DESPUES:", flowDict)
+ 
+	estaciones = ['Retiro','Tigre']
+
+	printGraph(G,filename,flowDict)
 
 if __name__ == "__main__":
 	main()
