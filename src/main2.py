@@ -2,6 +2,68 @@ import json
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+import random
+
+def generate_random_json(
+        num_services=8, 
+        num_stations=2, 
+        max_time=1440, 
+        demand_value=500, 
+        capacity=100, 
+        max_rs=25,
+        seed = 40,
+        time_beetween_services = 58,
+        cost_per_unit = 1.0
+        
+        ):
+    
+    random.seed(seed)
+    stations = [f"{i}Station" for i in range(num_stations)]
+    services = {}
+    
+    for service_id in range(1, num_services + 1):
+        stops = []
+        time = random.randint(0, max_time - time_beetween_services)
+        stationD = random.choice(stations)
+        stationA = random.choice(stations)
+        while stationD == stationA:
+            stationA = random.choice(stations)
+        stop = {
+            "time": time,
+            "station": stationD,
+            "type": "D"
+        }
+        stops.append(stop)
+        stop = {
+            "time": time + time_beetween_services,
+            "station": stationA,
+            "type": "A"
+        }
+        stops.append(stop)
+        services[str(service_id)] = {
+            "stops": stops,
+            "demand": [demand_value]
+        }
+    
+    cost_per_unit = {station: cost_per_unit for station in stations}
+
+    data = {
+        "services": services,
+        "stations": stations,
+        "cost_per_unit": cost_per_unit,
+        "rs_info": {
+            "capacity": capacity,
+            "max_rs": max_rs
+        }
+    }
+    
+    return data
+
+def getDatafromPath(path):
+    with open(path) as json_file:
+        data = json.load(json_file)
+        json_file.close()
+    return data
 
 def get_node_name(time:int,station:str):
     name = str(time)
@@ -19,13 +81,7 @@ def sort_nodes(nodes:list):
         sorted_nodes[i] = get_node_name(sorted_nodes[i],nodes[i][5:])
     return sorted_nodes
 
-def getPos(filename:str):
-
-	data = None
-	
-	with open(filename) as json_file:
-		data = json.load(json_file)
-		json_file.close()
+def getPos(data):
 	
 	servicios:dict = data["services"]
 	pos = {}
@@ -39,10 +95,10 @@ def getPos(filename:str):
 			if value["stops"][1]["station"] == estacion:
 					name_value = get_node_name(value["stops"][1]["time"],value["stops"][1]["station"])
 					columna.append(name_value)
+
 		columna = sort_nodes(columna)
 		columna.reverse()
 		for j, value in enumerate(columna):
-			
 			pos[value] = (i,j)
 
 	return pos
@@ -53,7 +109,7 @@ def get_curved_edges(G):
 			edges.append((u,v))
 	return edges
 
-def printGraph(G,filename,flow_dict):
+def printGraph(G,data,flow_dict):
 	
     # Crear etiquetas para los bordes que muestren peso, capacidad y flujo
     edge_labels = {}
@@ -72,7 +128,7 @@ def printGraph(G,filename,flow_dict):
     
     edge_styles = ['arc3, rad=0.45' if (u, v) in edges_with_curves else 'arc3, rad=0' for u, v in G.edges()]
 
-    pos = getPos(filename)
+    pos = getPos(data)
 
 
     plt.figure(figsize=(8, 8))
@@ -169,12 +225,7 @@ def addTrasNocheEdges(data, G, modificacion_trasnoche):
 			G.add_edge(final, inicio, weight=1,capacity = data["rs_info"]["max_rs"],color='red')
 	pass
 
-def generateGraph(filename:str,modificaciones_trasnoche):
-
-	data = None
-	with open(filename) as json_file:
-		data = json.load(json_file)
-		json_file.close()
+def generateGraph(data,modificaciones_trasnoche):
 
 	G = nx.DiGraph()
 
@@ -182,7 +233,6 @@ def generateGraph(filename:str,modificaciones_trasnoche):
 	addTraspasoEdges(data, G)
 	addTrasNocheEdges(data, G,modificaciones_trasnoche)
 
-	# pos = nx.bipartite_layout(G, [node for node in G.nodes if G.nodes[node]['bipartite']==0])
 	return G
 	
 def costo_minimo(flowDict,G):
@@ -197,14 +247,9 @@ def costo_minimo(flowDict,G):
             
 
     
-def vagones_totales(flowDict,filename, G):
-	data = None
+def vagones_totales(flowDict,data, G):
 	flujo_estacion = 0
 
-	with open(filename) as json_file:
-		data = json.load(json_file)
-		json_file.close()
-  
 	for estacion in data["stations"]:
 		inicio = getFirstDeparture(estacion, data, G)
 		final = getLastArrival(estacion, data, G)
@@ -236,9 +281,14 @@ def vagones_inciales(G, flowDict, estaciones):
 	print(F"{estaciones[1]}: {flujo_estacion2} vagones")
 				
 					
-            
+def getFlowCost(flowDict, G):
+	cost = 0
+	for u,v in G.edges:
+		cost += flowDict[u][v] * G.edges[u,v]['weight']
+	return cost     
 	
 def main():
+
 	instance = 0
 	if(instance == 0):
 		filename = "instances/toy_instance.json"
@@ -247,23 +297,30 @@ def main():
 	else:
 		filename = "instances/retiro-tigre-semana.json"
 
-	REDUCCION_CAPACIDAD_TRASNOCHE = (0,"Tigre")
+	REDUCCION_CAPACIDAD_TRASNOCHE = (0,"Statio_0")
 
-	G = generateGraph(filename,REDUCCION_CAPACIDAD_TRASNOCHE)
+	# data = getDatafromPath(filename)
+
+	data = generate_random_json(num_services=12, num_stations=2,seed=42)
+
+
+	G = generateGraph(data,REDUCCION_CAPACIDAD_TRASNOCHE)
+	
 
 	flowDict = nx.min_cost_flow(G)
 
-	print("FLOW ANTES:", flowDict)
-
-	vagones_totales(flowDict, filename, G)
+	vagones_totales(flowDict, data, G)
 	
 	costo_minimo(flowDict,G)
 
-	print("FLOW DESPUES:", flowDict)
+	printGraph(G,data,flowDict)
  
-	estaciones = ['Retiro','Tigre']
+	costo = getFlowCost(flowDict, G)
+	print(f"Costo total: {costo}")
 
-	printGraph(G,filename,flowDict)
+	
+
+
 
 if __name__ == "__main__":
 	main()
