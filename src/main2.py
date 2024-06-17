@@ -11,7 +11,6 @@ def generate_random_json(
         demand_value=500, 
         capacity=100, 
         max_rs=25,
-        seed = 40,
         time_beetween_services = 58,
         cost_per_unit = 1.0
         ):
@@ -202,7 +201,7 @@ def addTraspasoEdges(data, G):
 		
 		station_nodes = [get_node_name(station_nodes[i],station) for i in range(len(station_nodes))]
 		for i in range(len(station_nodes)-1):
-			G.add_edge(station_nodes[i], station_nodes[i+1], weight=0, capacity=data["rs_info"]["max_rs"] ,color='blue')
+			G.add_edge(station_nodes[i], station_nodes[i+1], weight=0, capacity=float("inf") ,color='blue')
             
 
 def getFirstDeparture(estacion, data, G): 
@@ -231,9 +230,9 @@ def addTrasNocheEdges(data, G, modificacion_trasnoche):
 		inicio = getFirstDeparture(estacion, data, G)
 		final = getLastArrival(estacion, data, G)
 		if(modificacion_trasnoche[1] == estacion):
-			G.add_edge(final, inicio, weight=1,capacity = data["rs_info"]["max_rs"] - modificacion_trasnoche[0],color='red')
+			G.add_edge(final, inicio, weight=1,capacity = float("inf"),color='red')
 		else:
-			G.add_edge(final, inicio, weight=1,capacity = data["rs_info"]["max_rs"],color='red')
+			G.add_edge(final, inicio, weight=1,capacity = float("inf"),color='red')
 	pass
 
 def generateGraph(data,modificaciones_trasnoche):
@@ -300,7 +299,7 @@ def getFlowCost(flowDict, G):
 	
 def main():
 
-	instance = 0
+	instance = 2
 	if(instance == 0):
 		filename = "instances/toy_instance.json"
 	elif(instance == 1):
