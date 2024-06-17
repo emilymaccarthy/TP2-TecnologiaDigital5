@@ -230,11 +230,14 @@ def addTrasNocheEdges(data, G, modificacion_trasnoche):
 	for estacion in data["stations"]:
 		inicio = getFirstDeparture(estacion, data, G)
 		final = getLastArrival(estacion, data, G)
-		if(modificacion_trasnoche[1] == estacion):
-			G.add_edge(final, inicio, weight=1,capacity = float("inf"),color='red')
+		if(modificacion_trasnoche[0] != 0):
+			if(modificacion_trasnoche[1] == estacion):
+				G.add_edge(final, inicio, weight=1,capacity = data["rs_info"]["max_rs"] - modificacion_trasnoche[0],color='red')
+			else:
+				G.add_edge(final, inicio, weight=1,capacity = float("inf"),color='red')
 		else:
 			G.add_edge(final, inicio, weight=1,capacity = float("inf"),color='red')
-	pass
+
 
 def generateGraph(data,modificaciones_trasnoche):
 
