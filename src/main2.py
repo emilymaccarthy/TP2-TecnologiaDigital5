@@ -7,14 +7,13 @@ import random
 def generate_random_json(
         num_services=8, 
         num_stations=2, 
-        max_time=1440, 
+        max_time=1440, # 1440 minutos === 60*24 minutos === 1 dia
         demand_value=500, 
         capacity=100, 
         max_rs=25,
         seed = 40,
         time_beetween_services = 58,
         cost_per_unit = 1.0
-        
         ):
     
     random.seed(seed)
@@ -115,7 +114,8 @@ def printGraph(G,data,flow_dict):
     edge_labels = {}
     for u, v, d in G.edges(data=True):
         if u in flow_dict and v in flow_dict[u]:
-            edge_labels[(u, v)] = f"w={d['weight']}, c={d['capacity']}, f={flow_dict[u][v]}"
+	    # f"w={d['weight']}, c={d['capacity']}, f={flow_dict[u][v]}" POR LAS DUDAS
+            edge_labels[(u, v)] = f"w={d['weight']},f={flow_dict[u][v]}"
         else:
             print(f"Missing flow for edge ({u}, {v})")
     
@@ -139,6 +139,17 @@ def printGraph(G,data,flow_dict):
         nx.draw_networkx_edges(G, pos, edgelist=[(u, v)], edge_color=[G[u][v]['color']], connectionstyle=style)
     
     nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels)
+    
+	# Ajustar la posición de las etiquetas de los bordes curvados
+    label_pos_adjust = {}
+    for (u, v) in edges_with_curves:
+        x1, y1 = pos[u]
+        x2, y2 = pos[v]
+        label_pos_adjust[(u, v)] = ((x1 + x2) / 2  , (y1 + y2) / 2 + 0.1)
+
+    # Dibujar etiquetas manualmente para bordes con curvas
+    for (u, v), (x, y) in label_pos_adjust.items():
+        plt.text(x+0.1, y, edge_labels[(u, v)], fontsize= 12, ha='left')
     
     plt.show()
 
@@ -200,7 +211,7 @@ def getFirstDeparture(estacion, data, G):
 	for key, value in data["services"].items():  
 		stops = value["stops"]
 		for stop in stops:
-			if stop["time"] < res and stops[0]["station"] == estacion and stops[0]["type"] == "D": # Quiero encontrar el horario de la 1ra departure de la estación
+			if stop["time"] < res and stop["station"] == estacion: # Quiero encontrar el horario de la 1ra departure de la estación
 				res = stop["time"]
 	return get_node_name(res, estacion)
 
@@ -210,7 +221,7 @@ def getLastArrival(estacion, data, G):
     for key, value in data["services"].items(): 
         stops = value["stops"]
         for stop in stops:
-            if stop["station"] == estacion and stop["type"] == "A" and stop["time"] > res: # Quiero encontrar el horario del último arrival a la estación
+            if stop["station"] == estacion and stop["time"] > res: # Quiero encontrar el horario del último arrival a la estación
                 res = stop["time"]
     return get_node_name(res, estacion)
 
@@ -297,17 +308,17 @@ def main():
 	else:
 		filename = "instances/retiro-tigre-semana.json"
 
-	REDUCCION_CAPACIDAD_TRASNOCHE = (0,"Statio_0")
+	REDUCCION_CAPACIDAD_TRASNOCHE = (0,"0Station")
 
-	# data = getDatafromPath(filename)
+	data = getDatafromPath(filename)
 
-	data = generate_random_json(num_services=12, num_stations=2,seed=42)
-
+	# data = generate_random_json(num_services=4, num_stations=2,seed=42)
 
 	G = generateGraph(data,REDUCCION_CAPACIDAD_TRASNOCHE)
 	
-
 	flowDict = nx.min_cost_flow(G)
+
+	# printGraph(G,data,flowDict)
 
 	vagones_totales(flowDict, data, G)
 	
@@ -316,6 +327,7 @@ def main():
 	printGraph(G,data,flowDict)
  
 	costo = getFlowCost(flowDict, G)
+
 	print(f"Costo total: {costo}")
 
 	
