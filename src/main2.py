@@ -12,7 +12,8 @@ def generate_random_json(
         capacity=100, 
         max_rs=25,
         time_beetween_services = 58,
-        cost_per_unit = 1.0
+        cost_per_unit = 1.0,
+		seed = 42
         ):
     
     random.seed(seed)
@@ -323,14 +324,56 @@ def main():
 	
 	costo_minimo(flowDict,G)
 
-	printGraph(G,data,flowDict)
- 
+	# printGraph(G,data,flowDict)
+
 	costo = getFlowCost(flowDict, G)
 
 	print(f"Costo total: {costo}")
 
-	
+	################################################################
 
+	# Lista de valores de x que queremos probar
+	valores_x = range(0, 1000,50)
+	resultados = []
+
+	REDUCCION_CAPACIDAD_TRASNOCHE = (0,"0Station")
+
+	for x in valores_x:
+		try:
+			data = generate_random_json(num_services=4, num_stations=2,demand_value = x,seed=42)
+			G = generateGraph(data,REDUCCION_CAPACIDAD_TRASNOCHE)
+			flowDict = nx.min_cost_flow(G)
+			vagones_totales(flowDict, data, G)
+			costo = getFlowCost(flowDict, G)
+
+			resultados.append((x, costo, True))  # El tercer elemento indica que no hubo error
+		except Exception as e:
+			print(f"Error para x = {x}: {e}")
+			resultados.append((x, None, False))  # El tercer elemento indica que hubo error
+
+	# Separar los resultados válidos y los que rompieron
+	valores_x_validos = [x for x, res, valid in resultados if valid]
+	valores_y_validos = [res for x, res, valid in resultados if valid]
+
+	valores_x_invalidos = [x for x, res, valid in resultados if not valid]
+	valores_y_invalidos = [0 for x, res, valid in resultados if not valid]  # Poner en 0 o algún valor placeholder
+ 
+	# Graficar los resultados
+	plt.plot(valores_x_validos, valores_y_validos, marker='o', linestyle='-', label='Valores válidos')
+	plt.scatter(valores_x_invalidos, valores_y_invalidos, color='red', marker='x', label='Errores')
+
+	# Añadir etiquetas y título
+	plt.xlabel('x')
+	plt.ylabel('mi_funcion(x)')
+	plt.title('Resultados de mi_funcion')
+	plt.legend()
+
+	# Mostrar el gráfico
+	plt.show()
+
+	
+def test():
+	pass
 
 
 if __name__ == "__main__":
