@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 
-### Hacer el grafo
+########## Funciones para hacer el grafo
 
 def generateGraph(data,modificaciones_trasnoche):
 	## Genera el grafo G
@@ -24,7 +24,6 @@ def addService(service, G):
 	from_time = data["stops"][0]["time"]
 	to_time = data["stops"][1]["time"]
 	demand = data["demand"]
-
 
 def addNodesAndTrainEdges(data, G):
     ## agrega los trenes de viaje
@@ -46,7 +45,6 @@ def addNodesAndTrainEdges(data, G):
 		G.add_node(to_, demand= -flow, color='red')
 		G.add_edge(from_, to_, weight= 0,capacity = data["rs_info"]["max_rs"] - flow, color='green' )
 
-
 def addTraspasoEdges(data, G):
 	## conecta dos eventos consecutivos
 	for station in data["stations"]:
@@ -63,7 +61,6 @@ def addTraspasoEdges(data, G):
 		station_nodes = [get_node_name(station_nodes[i],station) for i in range(len(station_nodes))]
 		for i in range(len(station_nodes)-1):
 			G.add_edge(station_nodes[i], station_nodes[i+1], weight=0, capacity=float("inf") ,color='blue')
-
 
 def getFirstDeparture(estacion, data, G):
     ## primer servicio del diaa
@@ -99,7 +96,8 @@ def addTrasNocheEdges(data, G, modificacion_trasnoche):
 			G.add_edge(final, inicio, weight=1,capacity = float("inf"),color='red')
 
 
-## imprimir el grafico
+########## Funciones para imprimir el grafico
+
 def printGraph(G,data,flow_dict):
 
     # Crear etiquetas para los bordes que muestren peso, capacidad y flujo
@@ -146,13 +144,13 @@ def printGraph(G,data,flow_dict):
     plt.show()
 
 
-## Determinar los costos
+########## Determinar los costos (Vagones totales)
+
 def costo_minimo(flowDict,G):
 	#arregla la representacion en el grafo
 	for u, v in G.edges:
 		if G.edges[u,v]['color'] == 'green':
 			flowDict[u][v] += G.nodes[u]["demand"]
-
 
 def vagones_totales(flowDict,data, G):
 	#Costo por cada estacion medido en cantidad de vagones necesarios para satisfacer la demanda
@@ -166,7 +164,6 @@ def vagones_totales(flowDict,data, G):
 
 		print(F"{estacion}: {flujo_estacion} vagones")
 
-
 def getFlowCost(flowDict, G):
 	#Costo total para la empresa medido en unidades de vagones
 	cost = 0
@@ -175,7 +172,8 @@ def getFlowCost(flowDict, G):
 	return cost
 
 
-## genera cronograma random
+########## Genera cronograma random
+
 def generate_random_json(
         num_services=8,
         num_stations=2,
@@ -236,6 +234,7 @@ def generate_random_json(
     }
 
     return data
+
 def generate_random_json2(
         num_services=8,
         num_stations=2,
@@ -290,7 +289,9 @@ def generate_random_json2(
 
     return data
 
-## Funciones auxiliares
+
+########## Funciones auxiliares
+
 def getDatafromPath(path):
     with open(path) as json_file:
         data = json.load(json_file)
@@ -342,7 +343,7 @@ def get_curved_edges(G):
 	return edges
 
 
-### funciones para la eperimentacion
+########## Funciones para la eperimentacion
 
 def experimentacion_horarios_de_circulacion(demand, cantidad_serv, plot_graph, plot_grafo):
     #tiempo que raleway services esta abierto
@@ -397,7 +398,7 @@ def experimentacion_capcidad_trenes(demand, cantidad_serv, plot_graph, plot_graf
 	for i in capacidad_trenes:
 		data = generate_random_json(
 				num_services=cantidad_serv,
-				num_stations=3,
+				num_stations=2,
 				max_time= 1440, # 1440 minutos === 60*24 minutos === 1 dia
 				demand_per_hour=demand,
 				capacity=i,
@@ -440,7 +441,7 @@ def experimentacion_tiempo_entre_servicios(demand, cantidad_serv, plot_graph, pl
 	for i in tiempo_entre_servicios:
 		data = generate_random_json(
 				num_services=cantidad_serv,
-				num_stations=3,
+				num_stations=2,
 				max_time= 1440, # 1440 minutos === 60*24 minutos === 1 dia
 				demand_per_hour=demand,
 				capacity=100,
@@ -473,57 +474,6 @@ def experimentacion_tiempo_entre_servicios(demand, cantidad_serv, plot_graph, pl
 
 	return valores_x_validos, valores_y_validos, valores_x_invalidos, valores_y_invalidos
 
-def experimentacion_demanda(peak_heights, peak_hours, cantidad_serv):
-
-    # Configuración (esta configurwacion deberia modificarse para ver comon impacta la demanda)
-	time = np.linspace(4, 24, cantidad_serv)  # Horas del día de 0 a 24 en intervalos de 1 hora
-	peak_hours = [7, 12, 19]         # Horas pico
-	peak_heights = [800, 900, 800]      # Altura de los picos de demanda
-	peak_widths = [1, 1, 1]          # Anchura de los picos (más pequeño = menos horas de horario pico)
-	base_demand = 500                 # Demanda base mínima
-
-	# Simulación de demanda
-	demand = simular_demanda(time, peak_hours, peak_heights, peak_widths, base_demand)
-
-	# Graficar la demanda vs tiempo par ver con que demnada estamos dealing with
-	plt.figure(figsize=(10, 6))
-	plt.plot(time, demand, label='Demanda simulada', marker='o', linestyle='-')
-	plt.title('Simulación de Demanda de Trenes a lo largo del Día')
-	plt.xlabel('Tiempo (horas)')
-	plt.ylabel('Demanda')
-	plt.xticks(np.arange(0, 25, step=1))
-	plt.grid(False)
-	plt.legend()
-	plt.show()
-
-	REDUCCION_CAPACIDAD_TRASNOCHE = (0,"0Station")
-
-	data = generate_random_json(
-				num_services=cantidad_serv,
-				num_stations=3,
-				max_time= 1440, # 1440 minutos === 60*24 minutos === 1 dia
-				demand_per_hour=demand,
-				capacity=100,
-				max_rs=50,
-				time_between_services = 60,
-				cost_per_unit = 1.0,
-				seed = 42
-		)
-
-	try:
-		G = generateGraph(data,REDUCCION_CAPACIDAD_TRASNOCHE)
-		flowDict = nx.min_cost_flow(G)
-
-		costo = getFlowCost(flowDict, G)
-		# printGraph(G, data, flowDict)
-
-	except Exception as e:
-		pass
-
-	return costo
-
-
-
 def plot(valores_x_validos,valores_y_validos,valores_x_invalidos,valores_y_invalidos,ylabel,xlabel,titulo):
 
 	# Graficar los resultados
@@ -539,7 +489,7 @@ def plot(valores_x_validos,valores_y_validos,valores_x_invalidos,valores_y_inval
 	# Mostrar el gráfico
 	plt.show()
 
-def plot_superpuesto(valores_x_validos, valores_y_validos, valores_x_invalidos, valores_y_invalidos, xlabel, ylabel, title, label, cant_serv):
+def plot_superpuesto(valores_x_validos, valores_y_validos, xlabel, ylabel, title, label, cant_serv):
     # Obtener número de líneas a graficar
 	num_lines = len(valores_x_validos)
 
@@ -577,8 +527,10 @@ def simular_demanda(tiempo, horas_pico, demanda_pico, ancho_pico, minima_demanda
 
     return demand
 
+
+
 def main():
-	EXPERIMENTACION = True
+	EXPERIMENTACION = False
  
 	if not EXPERIMENTACION:
 		print("Elegi una instancia:")
@@ -636,12 +588,14 @@ def main():
 	else:
 		######################### EXPERIMENTACION #########################
 
-		# Configuración (esta configurwacion deberia modificarse para ver comon impacta la demanda)
+		########## Generar la demanda
+  
+		# Configuración (esta configuracion se modifica para ver comon impacta la demanda)
 		time = np.linspace(0, 24, 24)  # Horas del día de 0 a 24 en intervalos de 1 hora
 		peak_hours = [7, 12, 19]         # Horas pico
-		peak_heights = [800, 900, 800]      # Altura de los picos de demanda
-		peak_widths = [1, 1, 1]          # Anchura de los picos (más pequeño = menos horas de horario pico)
-		base_demand = 500                 # Demanda base mínima
+		peak_heights = [1200, 900, 1500]      # Altura de los picos de demanda
+		peak_widths = [1, 2, 1]          # Anchura de los picos (más pequeño = menos horas de horario pico)
+		base_demand = 600                 # Demanda base mínima
 
 		# Simulación de demanda
 		demand = simular_demanda(time, peak_hours, peak_heights, peak_widths, base_demand)
@@ -657,136 +611,54 @@ def main():
 		plt.legend()
 		plt.show()
 
-
-
-		cantidad_de_servicios = [10, 20, 30, 40, 50]
-
-		# Experimentación y acumulación de resultados
-		valores_x_validos_horarios = []
-		valores_y_validos_horarios = []
-		valores_x_invalidos_horarios = []
-		valores_y_invalidos_horarios = []
-
-		valores_x_validos_capacidad = []
-		valores_y_validos_capacidad = []
-		valores_x_invalidos_capacidad = []
-		valores_y_invalidos_capacidad = []
-
-		valores_x_validos_tiempo = []
-		valores_y_validos_tiempo = []
-		valores_x_invalidos_tiempo = []
-		valores_y_invalidos_tiempo = []
-
+		########## Experimentación y acumulación de resultados
+		cantidad_de_servicios = [5, 10, 20, 30, 40, 50]
+  
 		#si quere cada plot individual
 		plot_individual_graphs = False
 		plot_individual_grafos = False
+	
+		valores_x_validos_horarios = []
+		valores_y_validos_horarios = []
+	
+		valores_x_validos_capacidad = []
+		valores_y_validos_capacidad = []
+		
+		valores_x_validos_tiempo = []
+		valores_y_validos_tiempo = []
+
 
 		for cant_serv in cantidad_de_servicios:
 			# Experimentación para horarios de circulación
 			vxv, vyv, xinv, yinv = experimentacion_horarios_de_circulacion(demand, cant_serv, plot_individual_graphs, plot_individual_grafos)
 			valores_x_validos_horarios.append(vxv)
 			valores_y_validos_horarios.append(vyv)
-			# valores_x_invalidos_horarios.extend(xinv)
-			# valores_y_invalidos_horarios.extend(yinv)
+			
 
 			# Experimentación para capacidad de trenes
 			vxv, vyv, xinv, yinv = experimentacion_capcidad_trenes(demand, cant_serv, plot_individual_graphs, plot_individual_grafos)
 			valores_x_validos_capacidad.append(vxv)
 			valores_y_validos_capacidad.append(vyv)
-			# valores_x_invalidos_capacidad.extend(xinv)
-			# valores_y_invalidos_capacidad.extend(yinv)
+			
 
 			# Experimentación para tiempo entre servicios
 			vxv, vyv, xinv, yinv = experimentacion_tiempo_entre_servicios(demand, cant_serv, plot_individual_graphs, plot_individual_grafos)
 			valores_x_validos_tiempo.append(vxv)
 			valores_y_validos_tiempo.append(vyv)
-			# valores_x_invalidos_tiempo.extend(xinv)
-			# valores_y_invalidos_tiempo.extend(yinv)
+			
 
-		# Generar gráficos superpuestos al final
-		plot_superpuesto(valores_x_validos_horarios, valores_y_validos_horarios, valores_x_invalidos_horarios, valores_y_invalidos_horarios,
+		# Generar gráficos superpuestos con los diferentes cantidades de servicios 
+		plot_superpuesto(valores_x_validos_horarios, valores_y_validos_horarios,
 			"Cantidad total de horas de circulación de trenes (en un día)","Cantidad de Vagones",
 			"Costo de tener trenes circulando más horas (en cantidad de vagones)", '# de servicios',cantidad_de_servicios)
 
-		plot_superpuesto(valores_x_validos_capacidad, valores_y_validos_capacidad, valores_x_invalidos_capacidad, valores_y_invalidos_capacidad,
+		plot_superpuesto(valores_x_validos_capacidad, valores_y_validos_capacidad,
 			"Capacidad de vagones (medido en personas)", "Cantidad de Vagones",
 			"Costo de tener trenes de mayor capacidad", '# de servicios',cantidad_de_servicios)
 
-		plot_superpuesto(valores_x_validos_tiempo, valores_y_validos_tiempo, valores_x_invalidos_tiempo, valores_y_invalidos_tiempo,
+		plot_superpuesto(valores_x_validos_tiempo, valores_y_validos_tiempo,
 			"Tiempo mínimo entre servicios", "Cantidad de Vagones",
 			"Variación del costo según el tiempo entre servicios de trenes", '# de servicios',cantidad_de_servicios)
-
-
-	# ## esto no funciona
-	# peaks = [7,12,19]
-	# peak_heights = [[800,900,800],[400,200,300],[200,300,400]]
-	# can_serviclub = 20
-	# #diferetnes cantidad de vagones necesarios para las peaks de las diferentes demandas
-	# resultados_cantidad_de_vagones = []
-	# avg_peaks = []
-	# for peaks in peak_heights:
-	# 	resultados_cantidad_de_vagones.append(experimentacion_demanda(peak_heights,peaks,can_serviclub))
-	# 	avg_peaks.append(sum(peaks) / len(peaks))
-
-
-    # # Graficar los resultados
-	# plt.plot(avg_peaks, resultados_cantidad_de_vagones, marker='o', linestyle='-')
-
-
-	# # Añadir etiquetas y título
-	# plt.xlabel("El promedio de demanda mas alta")
-	# plt.ylabel("Cantidad de vagones")
-	# plt.title("Como las horas pico inlfuyen en la demanda")
-	# plt.legend()
-
-	# # Mostrar el gráfico
-	# plt.show()
-
-
-
-
-
-
-	# # Lista de valores de x que queremos probar
-	# valores_x = range(0, 1000,50)
-	# resultados = []
-
-	# REDUCCION_CAPACIDAD_TRASNOCHE = (0,"0Station")
-
-	# for x in valores_x:
-	# 	try:
-	# 		data = generate_random_json2(num_services=4, num_stations=2,demand_value = x,seed=42)
-	# 		G = generateGraph(data,REDUCCION_CAPACIDAD_TRASNOCHE)
-	# 		flowDict = nx.min_cost_flow(G)
-	# 		vagones_totales(flowDict, data, G)
-	# 		costo = getFlowCost(flowDict, G)
-
-	# 		resultados.append((x, costo, True))  # El tercer elemento indica que no hubo error
-	# 	except Exception as e:
-	# 		print(f"Error para x = {x}: {e}")
-	# 		resultados.append((x, None, False))  # El tercer elemento indica que hubo error
-
-	# # Separar los resultados válidos y los que rompieron
-	# valores_x_validos = [x for x, res, valid in resultados if valid]
-	# valores_y_validos = [res for x, res, valid in resultados if valid]
-
-	# valores_x_invalidos = [x for x, res, valid in resultados if not valid]
-	# valores_y_invalidos = [0 for x, res, valid in resultados if not valid]  # Poner en 0 o algún valor placeholder
-
-	# # Graficar los resultados
-	# plt.plot(valores_x_validos, valores_y_validos, marker='o', linestyle='-', label='Valores válidos')
-	# plt.scatter(valores_x_invalidos, valores_y_invalidos, color='red', marker='x', label='Errores')
-
-	# # Añadir etiquetas y título
-	# plt.xlabel('x')
-	# plt.ylabel('mi_funcion(x)')
-	# plt.title('Resultados de mi_funcion')
-	# plt.legend()
-
-	# # Mostrar el gráfico
-	# plt.show()
-
-
 
 
 if __name__ == "__main__":
