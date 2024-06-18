@@ -1,1 +1,1 @@
-flowDict
+printGraph(G, flowDict)
